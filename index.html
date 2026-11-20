@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142a43">
+  <meta name="description" content="Simulador local de autoevaluación para Sistemas de Información e Investigación en Marketing.">
+  <title>Simulador de Autoevaluación - Sistemas de Información e Investigación en Marketing - Preguntas Clave</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2b3a;
+      --muted: #5f6e7c;
+      --line: #dce3e9;
+      --surface: #ffffff;
+      --page: #f3f6f8;
+      --navy: #173b5e;
+      --navy-strong: #102d49;
+      --teal: #087f78;
+      --teal-soft: #e8f6f3;
+      --blue-soft: #edf4fa;
+      --green: #176b43;
+      --green-soft: #eaf6ef;
+      --red: #a43232;
+      --red-soft: #fff0ef;
+      --shadow: 0 8px 24px rgba(20, 42, 67, .06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    button, input { font: inherit; }
+    button:focus-visible, input:focus-visible + .option-content, a:focus-visible {
+      outline: 3px solid #70b9d4;
+      outline-offset: 3px;
+    }
+    .topbar {
+      background: linear-gradient(115deg, #102d49, #1c4d70);
+      color: #fff;
+      padding: 32px 20px 36px;
+    }
+    .topbar-inner, main, .footer-inner { width: min(1060px, calc(100% - 36px)); margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #c2d6e6;
+      font-size: .77rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; max-width: 900px; font-size: clamp(1.55rem, 3.5vw, 2.35rem); line-height: 1.18; letter-spacing: -.025em; }
+    .subtitle { margin: 12px 0 0; max-width: 760px; color: #e2edf5; font-size: 1rem; }
+    main { padding: 26px 0 48px; }
+    .intro-panel, .result-summary, .question-card, .notice, .instructions {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .intro-panel { padding: 20px 22px; margin-bottom: 18px; }
+    .intro-panel h2, .section-title { margin: 0 0 8px; font-size: 1.05rem; }
+    .intro-panel p { margin: 5px 0 0; color: var(--muted); font-size: .93rem; }
+    .source-note { margin-top: 12px !important; padding-top: 12px; border-top: 1px solid var(--line); }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
+    .metric {
+      min-width: 0; padding: 15px 17px; background: var(--surface);
+      border: 1px solid var(--line); border-radius: 13px;
+    }
+    .metric-label { display: block; color: var(--muted); font-size: .82rem; }
+    .metric-value { display: block; margin-top: 2px; font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .progress-wrap { margin: 18px 0 22px; }
+    .progress-heading { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .86rem; margin-bottom: 8px; }
+    .progress-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e3e9ee; }
+    .progress-fill { height: 100%; width: 0%; border-radius: inherit; background: var(--teal); transition: width .2s ease; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 16px; }
+    .toolbar h2 { margin: 0; font-size: 1.2rem; }
+    .status-pill { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 99px; color: #174b6a; background: var(--blue-soft); font-size: .78rem; font-weight: 750; }
+    .questions { display: grid; gap: 16px; }
+    .question-card { padding: 20px 22px; scroll-margin-top: 18px; }
+    .question-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .question-number { color: var(--navy); font-size: .83rem; font-weight: 800; }
+    .tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 4px 8px; background: #eff3f6; color: #45596b; font-size: .73rem; font-weight: 700; }
+    .tag.type-multiple { color: #075f5a; background: #e6f5f2; }
+    .question-card h3 { margin: 0 0 9px; font-size: 1.04rem; line-height: 1.5; font-weight: 720; }
+    .instruction { margin: 0 0 13px; color: var(--muted); font-size: .86rem; }
+    .options { display: grid; gap: 9px; }
+    .option {
+      display: flex; align-items: flex-start; gap: 12px; padding: 11px 13px;
+      border: 1px solid #dfe6ec; border-radius: 11px; background: #fff; cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+    }
+    .option:hover { border-color: #9cb8cb; background: #f9fcfe; }
+    .option.is-selected { border-color: #3d819d; background: #eff7fa; }
+    .option input { margin: 3px 0 0; width: 17px; height: 17px; flex: 0 0 auto; accent-color: var(--teal); }
+    .option-content { display: flex; gap: 10px; min-width: 0; flex: 1; border-radius: 5px; }
+    .letter { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 23px; height: 23px; border-radius: 6px; background: #edf1f4; color: #3b4c5c; font-size: .76rem; font-weight: 800; }
+    .option-text { font-size: .93rem; overflow-wrap: anywhere; }
+    .question-card.is-correct { border-left: 5px solid var(--green); }
+    .question-card.is-incorrect { border-left: 5px solid var(--red); }
+    .option.is-right { border-color: #83c5a0; background: var(--green-soft); }
+    .option.is-wrong-selected { border-color: #dfa0a0; background: var(--red-soft); }
+    .option input:disabled { opacity: 1; }
+    .answer-mark { margin-left: auto; padding-left: 8px; color: var(--green); font-size: .8rem; font-weight: 800; white-space: nowrap; }
+    .answer-mark.wrong { color: var(--red); }
+    .feedback { margin-top: 15px; padding: 15px 16px; border-radius: 11px; background: #f5f8fa; border: 1px solid var(--line); }
+    .feedback-status { margin: 0 0 10px; font-weight: 850; }
+    .feedback-status.good { color: var(--green); }
+    .feedback-status.bad { color: var(--red); }
+    .feedback p { margin: 7px 0; font-size: .9rem; }
+    .feedback strong { color: #263d50; }
+    .reference { color: var(--muted); font-size: .83rem !important; }
+    .result-summary { padding: 20px 22px; margin: 0 0 20px; border-top: 4px solid var(--teal); }
+    .result-heading { margin: 0 0 14px; font-size: 1.15rem; }
+    .score-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; }
+    .score-cell { background: #f5f8fa; border: 1px solid var(--line); padding: 13px; border-radius: 10px; }
+    .score-cell span { display: block; color: var(--muted); font-size: .82rem; }
+    .score-cell strong { display: block; font-size: 1.5rem; font-weight: 850; font-variant-numeric: tabular-nums; }
+    .notice { padding: 14px 17px; margin: 18px 0; color: #536474; font-size: .88rem; box-shadow: none; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 22px 0; }
+    .btn { border: 0; border-radius: 10px; padding: 12px 17px; font-weight: 780; cursor: pointer; transition: transform .1s ease, opacity .1s ease, background .1s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { color: #fff; background: var(--navy); }
+    .btn-primary:hover:not(:disabled) { background: var(--navy-strong); }
+    .btn-secondary { color: #174d69; background: #e6f0f5; border: 1px solid #c9dce7; }
+    .btn-secondary:hover { background: #daeaf2; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .small-help { color: var(--muted); font-size: .83rem; }
+    .instructions { padding: 17px 20px; margin-top: 22px; box-shadow: none; }
+    .instructions h2 { margin: 0 0 7px; font-size: .98rem; }
+    .instructions p { margin: 4px 0; color: var(--muted); font-size: .85rem; }
+    footer { padding: 18px 0 28px; color: var(--muted); font-size: .8rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 640px) {
+      .topbar { padding: 25px 16px 29px; }
+      .topbar-inner, main, .footer-inner { width: min(100% - 24px, 1060px); }
+      main { padding-top: 17px; }
+      .metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .metric:last-child { grid-column: 1 / -1; }
+      .metric { padding: 12px 13px; }
+      .intro-panel, .question-card, .result-summary { padding: 16px; }
+      .score-grid { grid-template-columns: 1fr 1fr; }
+      .score-cell:first-child { grid-column: 1 / -1; }
+      .toolbar { align-items: flex-start; }
+      .actions .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <p class="eyebrow">Práctica académica · Nivel maestría</p>
+      <h1>Preguntas clave</h1>
+      <p class="subtitle">Sistemas de Información e Investigación en Marketing</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro-panel" aria-labelledby="about-title">
+      <h2 id="about-title">Simulador de autoevaluación</h2>
+      <p>Responde 20 preguntas por intento. Cada pregunta vale 1 punto y no hay penalización por errores. En selección múltiple debes marcar todas y únicamente las respuestas correctas para obtener el punto.</p>
+      <p class="source-note"><strong>Alcance del banco:</strong> 50 preguntas extraídas del CSV, correspondientes a 10 temas (Temas 1–6 y 8–11). El archivo no incluye el Tema 7. Cada examen presenta dos preguntas por tema; la selección se organiza para practicar todos los temas, pero no predice de forma fiable el contenido del examen real.</p>
+    </section>
+
+    <div class="metrics" aria-label="Resumen del examen">
+      <div class="metric"><span class="metric-label">Preguntas respondidas</span><strong class="metric-value" id="answered-count">0/20</strong></div>
+      <div class="metric"><span class="metric-label">Valor máximo</span><strong class="metric-value">20/20</strong></div>
+      <div class="metric"><span class="metric-label">Temas por examen</span><strong class="metric-value">10/10</strong></div>
+    </div>
+
+    <div class="progress-wrap" aria-label="Progreso de respuestas">
+      <div class="progress-heading"><span>Progreso del examen</span><strong id="progress-label">0 de 20 respondidas</strong></div>
+      <div class="progress-track" role="progressbar" aria-label="Preguntas respondidas" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <section id="result-summary" class="result-summary" aria-live="polite" hidden></section>
+
+    <div class="toolbar">
+      <h2>Examen actual</h2>
+      <span class="status-pill" id="exam-status">Intento en curso</span>
+    </div>
+
+    <form id="exam-form" novalidate>
+      <div class="questions" id="questions" aria-label="Preguntas del examen"></div>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit" id="submit-btn" disabled>Enviar examen</button>
+        <span class="small-help" id="submit-help">Responde las 20 preguntas para habilitar el envío.</span>
+      </div>
+    </form>
+
+    <div class="actions">
+      <button class="btn btn-secondary" type="button" id="new-exam-btn">Generar nuevo examen</button>
+    </div>
+
+    <div class="notice" role="note">
+      <strong>Nota sobre selección múltiple:</strong> el CSV contiene solo tres preguntas de este tipo. Para conservar dos preguntas por tema y una mezcla de formatos, cada intento incluye dos de esas tres preguntas; por ello, al menos una pregunta de selección múltiple puede repetirse entre intentos consecutivos. Las preguntas de opción única se seleccionan evitando, cuando el banco lo permite, las del intento inmediatamente anterior.
+    </div>
+
+    <section class="instructions" aria-labelledby="instructions-title">
+      <h2 id="instructions-title">Criterios de calificación</h2>
+      <p>Opción única: 1 punto si la respuesta es correcta. Selección múltiple: 1 punto solo cuando se seleccionan todas y únicamente las opciones correctas; no existe puntuación parcial.</p>
+      <p>Después de enviar, podrás revisar la respuesta que marcaste, la clave del CSV, la explicación y la fila de origen del registro.</p>
+    </section>
+  </main>
+
+  <footer><div class="footer-inner">Simulador local. Las respuestas, la calificación y la generación de exámenes se procesan en este navegador; no se envían datos a servicios externos.</div></footer>
+
+  <script>
+  'use strict';
+  const BANK = [{"id":"q1","sourceRow":2,"theme":"Tema 1. El sistema de información comercial en la empresa","question":"La empresa precisa de un sistema de recolección y gestión adecuado para tomar decisiones relacionadas con su participación de mercado y tendencias de mercado. ¿A qué tipo de decisión empresarial se hace referencia?","type":"single","options":[{"id":"o1","text":"Decisiones comerciales.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Decisiones estratégicas.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Decisiones tecnológicas.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Decisiones operativas.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 1.2 se indica que las decisiones estratégicas abordan problemas estructurales y se relacionan con información sobre participación de mercado, tendencias de mercado y preferencias de los consumidores (pág. 6 del PDF; pág. 5 del Tema 1)."},{"id":"q2","sourceRow":3,"theme":"Tema 1. El sistema de información comercial en la empresa","question":"Una de las funciones de los sistemas de información es ofrecer una base a los responsables de marketing para tomar las mejores decisiones comerciales en cada momento. ¿A qué función se hace referencia?","type":"single","options":[{"id":"o1","text":"Apoyo en la ventaja competitiva.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Apoyo tecnológico.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Apoyo a los procesos de negocio.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Apoyo en la toma de decisiones.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 1.3 se define literalmente que la función de apoyo en la toma de decisiones consiste en ofrecer una base a los responsables de marketing para tomar las mejores decisiones comerciales en cada momento (pág. 9 del PDF; pág. 8 del Tema 1)."},{"id":"q3","sourceRow":4,"theme":"Tema 1. El sistema de información comercial en la empresa","question":"Entre los sistemas de apoyo a la administración se identifica un sistema que proporcionan información en forma de noticias a los directivos y demás responsables de la empresa. ¿A qué sistema de información se hacer referencia?","type":"single","options":[{"id":"o1","text":"Sistemas de información gerencial.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Sistema de apoyo a la toma de decisiones.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Sistemas de información ejecutiva.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Sistemas de control de procesos.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 1.3, dentro de los sistemas de apoyo a la administración, se señala que los sistemas de información gerencial proporcionan información en forma de noticias a los directivos y responsables de la empresa (pág. 10 del PDF; pág. 9 del Tema 1)."},{"id":"q4","sourceRow":5,"theme":"Tema 1. El sistema de información comercial en la empresa","question":"Identifica cuál de estos motivos justifican el uso de los sistemas de información para tomar decisiones.","type":"single","options":[{"id":"o1","text":"Disponibilidad inmediata de la información recogida.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Investigación concluyente.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Investigación causal.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Todos los motivos justifican el uso de los sistemas de información para tomar decisiones.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 1.4 se listan los motivos que justifican el uso de los sistemas de información en la toma de decisiones, entre los que figura la disponibilidad inmediata de la información recogida; las investigaciones concluyente y causal son diseños de investigación (pág. 12 del PDF; pág. 11 del Tema 1)."},{"id":"q5","sourceRow":6,"theme":"Tema 1. El sistema de información comercial en la empresa","question":"¿Cuál de estas funciones no se identifican en los CRM?","type":"single","options":[{"id":"o1","text":"Automatizar y promocionar las ventas de la empresa.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Desarrollar predicciones y proyecciones de las ventas de la empresa.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Gestionar todos los aspectos que definen las operaciones comerciales como facturación, catálogos, inventarios, etc.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Permitir el seguimiento de campañas de marketing y medir su relevancia.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 1.5 se especifica que gestionar facturación, catálogos e inventarios corresponde a los sistemas ERP, mientras que las demás opciones son funciones del CRM (págs. 15 y 16 del PDF; págs. 14 y 15 del Tema 1)."},{"id":"q6","sourceRow":7,"theme":"Tema 2. Proceso, diseño y técnicas en la investigación de mercados","question":"¿Cuál de estas etapas no se identifica en el desarrollo de la investigación de mercados nacionales?","type":"single","options":[{"id":"o1","text":"Elaboración del informe.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Diseño de la investigación.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Determinación de los objetivos.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Indagación interna de la empresa.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 2.3 (Figuras 1 y 2) se establece que la indagación interna de la empresa es una etapa previa propia de la investigación de mercados internacionales y no forma parte del proceso nacional (págs. 29, 32 y 33 del PDF; págs. 7, 10 y 11 del Tema 2)."},{"id":"q7","sourceRow":8,"theme":"Tema 2. Proceso, diseño y técnicas en la investigación de mercados","question":"¿A cuál de estos desafíos se enfrenta la empresa al desarrollar una investigación de mercados internacionales?","type":"single","options":[{"id":"o1","text":"Dificultad para identificar al público objetivo.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Dificultad para comprender los factores culturales del nuevo mercado.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Acceso limitado a la información del nuevo mercado.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Todos son desafíos a los que se enfrentan las empresas al desarrollar investigaciones de mercados internacionales.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 2.4 se enumeran explícitamente los tres desafíos mencionados (identificación del público objetivo, comprensión de factores culturales y acceso limitado a la información) como propios de la investigación internacional (págs. 35 y 36 del PDF; págs. 13 y 14 del Tema 2)."},{"id":"q8","sourceRow":9,"theme":"Tema 2. Proceso, diseño y técnicas en la investigación de mercados","question":"¿Cuál de estas investigaciones descriptivas se caracteriza consiste por obtener una sola vez la información de una muestra de la población objetivo?","type":"single","options":[{"id":"o1","text":"Transversales simples.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Transversales múltiples.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Longitudinales.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Concluyentes.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 2.5 se define literalmente que los diseños transversales simples consisten en obtener una sola vez la información de una muestra de la población objetivo (pág. 39 del PDF; pág. 17 del Tema 2)."},{"id":"q9","sourceRow":10,"theme":"Tema 2. Proceso, diseño y técnicas en la investigación de mercados","question":"¿Cuál de este tipo de investigaciones se caracteriza por poder ser confirmatoria, aunque normalmente necesita de investigaciones posteriores?","type":"single","options":[{"id":"o1","text":"Investigación exploratoria.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Investigación concluyente.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Investigación causal.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Investigación descriptiva.","correct":true,"sourceLabel":"D"}],"explanation":"En la Tabla 1 del apartado 2.5 se indica que la naturaleza de los resultados de la investigación descriptiva puede ser confirmatoria, aunque normalmente necesita de investigaciones posteriores (pág. 40 del PDF; pág. 18 del Tema 2)."},{"id":"q10","sourceRow":11,"theme":"Tema 2. Proceso, diseño y técnicas en la investigación de mercados","question":"¿Cuál de estas fuentes de información secundaria se caracteriza porque la responsabilidad del investigador es identificar los medios de información que sean realmente prestigiosos y cuya información se ajuste a la investigación que se esté llevando a cabo?","type":"single","options":[{"id":"o1","text":"Fuentes públicas.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Fuentes comerciales.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Fuentes privadas.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Instituciones educativas.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 2.6 se señala que en las fuentes comerciales (periódicos, revistas, televisión) es responsabilidad del investigador identificar medios realmente prestigiosos cuya información se ajuste al estudio (pág. 42 del PDF; pág. 20 del Tema 2)."},{"id":"q11","sourceRow":12,"theme":"Tema 3. Técnicas cualitativas de obtención de información en investigación de mercados","question":"¿Cuál de estas características no forman parte de los grupos de enfoque?","type":"single","options":[{"id":"o1","text":"Tamaño reducido.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Entorno físico en el que se celebra el grupo de enfoque.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Duración no extensa.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Composición heterogénea del grupo.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 3.3 se establece que los grupos de enfoque deben tener una composición homogénea del grupo (en características demográficas y socioeconómicas) para evitar conflictos entre participantes, no heterogénea (pág. 58 del PDF; pág. 8 del Tema 3)."},{"id":"q12","sourceRow":13,"theme":"Tema 3. Técnicas cualitativas de obtención de información en investigación de mercados","question":"En un grupo de enfoque, ¿cuál de estas características no debe definir al moderador?","type":"single","options":[{"id":"o1","text":"Amabilidad con firmeza.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Compromiso.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Inflexibilidad.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Aliento.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 3.3 se indica que el perfil del moderador requiere flexibilidad para variar las condiciones del grupo si no se cumplen las expectativas, junto con amabilidad con firmeza, compromiso y aliento; por tanto, no debe ser inflexible (págs. 59 y 60 del PDF; págs. 9 y 10 del Tema 3)."},{"id":"q13","sourceRow":14,"theme":"Tema 3. Técnicas cualitativas de obtención de información en investigación de mercados","question":"¿Cuál de estos beneficios no se puede obtener del uso de entrevistas personales como método cualitativo de recogida de información?","type":"single","options":[{"id":"o1","text":"Mayor control de la secuencia de preguntas.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Uso de ayudas visuales para demostrar conceptos.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Capacidad de recoger información únicamente general.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Adaptación de las preguntas a los intereses de los entrevistados.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 3.4 se detalla que uno de los beneficios de la entrevista personal es la capacidad de recoger información específica, no únicamente general (pág. 64 del PDF; pág. 14 del Tema 3)."},{"id":"q14","sourceRow":15,"theme":"Tema 3. Técnicas cualitativas de obtención de información en investigación de mercados","question":"¿Cuál de estas limitaciones se derivan del uso de entrevistas telefónicas como método cualitativo de recogida de información?","type":"multiple","options":[{"id":"o1","text":"Dificultad para motivar al entrevistado.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Facilidad en la capacidad del entrevistado para responder a determinadas preguntas del entrevistador.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"La información, adicional a las respuestas recogidas, recogida por el entrevistador es limitada.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Coste elevado respecto de la ejecución de otros métodos de recogida de información.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 3.4 figuran literalmente las opciones A, B y C como limitaciones de la entrevista telefónica (pág. 66 del PDF; pág. 16 del Tema 3), mientras que la opción D corresponde a la entrevista personal (pág. 64 del PDF; pág. 14 del Tema 3), ya que la telefónica tiene costes bajos."},{"id":"q15","sourceRow":16,"theme":"Tema 3. Técnicas cualitativas de obtención de información en investigación de mercados","question":"Entre las técnicas proyectivas destaca las técnicas que piden a los entrevistados que completen una frase, que construyan una historia o que indiquen la primera palabra que les viene a la mente al oír una marca, producto o servicio.","type":"single","options":[{"id":"o1","text":"Técnicas de asociación.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Técnicas de complementación.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Técnicas de construcción.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Técnicas de expresión.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 3.4 se define textualmente que en las técnicas de complementación se pide a los entrevistados que completen una frase, construyan una historia o indiquen la primera palabra al oír una marca, producto o servicio (pág. 67 del PDF; pág. 17 del Tema 3)."},{"id":"q16","sourceRow":17,"theme":"Tema 4. Técnicas cuantitativas de obtención de información en investigación de mercados","question":"¿Cuál de estas ventajas no se deriva de una correcta creación y gestión de la base de datos?","type":"single","options":[{"id":"o1","text":"Localización de la información.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Capacidad para compartir información.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Eliminación de información incongruente.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Independencia de datos.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 4.3 se enumeran las ventajas de las bases de datos (globalización de la información, eliminación de información redundante e incongruente, capacidad para compartir información, integridad e independencia de datos), entre las que no figura la localización de la información (págs. 80 y 81 del PDF; págs. 6 y 7 del Tema 4)."},{"id":"q17","sourceRow":18,"theme":"Tema 4. Técnicas cuantitativas de obtención de información en investigación de mercados","question":"¿Qué tipos de preguntas de una encuesta aportan menos información, pero son fundamentales en una investigación causal?","type":"single","options":[{"id":"o1","text":"Abiertas.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Entrecerradas.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Cerradas.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Entreabiertas.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 4.4 se afirma literalmente que las preguntas cerradas aportan menos información para la empresa, pero son fundamentales si la naturaleza de la investigación es causal (pág. 83 del PDF; pág. 9 del Tema 4)."},{"id":"q18","sourceRow":19,"theme":"Tema 4. Técnicas cuantitativas de obtención de información en investigación de mercados","question":"¿Cuál de estas ventajas no deriva del uso de encuestas en medios online?","type":"single","options":[{"id":"o1","text":"Mayor amplitud geográfica.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Sesgo del método.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Mayor eficiencia y velocidad de respuesta.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Proceso con menos etapa.","correct":false,"sourceLabel":"D"}],"explanation":"En la Tabla 1 del apartado 4.4, el sesgo del método se clasifica en la columna de limitaciones de las encuestas online, mientras que las otras tres opciones aparecen en la columna de ventajas (pág. 85 del PDF; pág. 11 del Tema 4)."},{"id":"q19","sourceRow":20,"theme":"Tema 4. Técnicas cuantitativas de obtención de información en investigación de mercados","question":"En una encuesta, ¿qué tipo de preguntas tiene como fin la medición de los diferentes aspectos que definen cada uno de los constructos que se incluyen en el modelo de investigación propuesto?","type":"single","options":[{"id":"o1","text":"Personales.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Específicas.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Identificación.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Generales.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 4.5 se indica textualmente que el bloque de preguntas específicas tiene como fin medir los diferentes aspectos que definen cada uno de los constructos incluidos en el modelo de investigación (págs. 89 y 90 del PDF; págs. 15 y 16 del Tema 4)."},{"id":"q20","sourceRow":21,"theme":"Tema 4. Técnicas cuantitativas de obtención de información en investigación de mercados","question":"¿Cuál de estos análisis y test no se utiliza para evaluar la fiabilidad y validez de las distintas escalas que componen los constructos del modelo de estudio?","type":"single","options":[{"id":"o1","text":"Test Kolmogorow-Smirnov.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Análisis factorial exploratorio.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Análisis de la validez discriminante.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Los anteriores test y análisis son utilizados para el fin descrito.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 4.6 se establece que para evaluar la fiabilidad y validez de las escalas se realizan el test de Kolmogorov-Smirnov, el análisis factorial exploratorio, el confirmatorio y el análisis de validez discriminante (págs. 96 y 97 del PDF; págs. 22 y 23 del Tema 4)."},{"id":"q21","sourceRow":22,"theme":"Tema 5. Muestreo en marketing e investigación de mercados","question":"¿Cuál de estos tipos no se puede identificar en los muestreos probabilísticos?","type":"single","options":[{"id":"o1","text":"Sistemático.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Conglomerados.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Por cuotas.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Interpenetrantes.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 5.2 (Figura 1 y texto) se clasifica el muestreo por cuotas dentro de los muestreos no probabilísticos, mientras que sistemático, conglomerados e interpenetrantes son probabilísticos (págs. 116 a 119 del PDF; págs. 5 a 8 del Tema 5)."},{"id":"q22","sourceRow":23,"theme":"Tema 5. Muestreo en marketing e investigación de mercados","question":"¿Cuál de estos tipos no se puede identificar en los muestreos no probabilísticos?","type":"single","options":[{"id":"o1","text":"Bola de nieve.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Casos típicos.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Por cuotas.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Bifásico.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 5.2 se incluye el muestreo doble o bifásico dentro de los muestreos probabilísticos, mientras que bola de nieve, casos típicos y por cuotas son no probabilísticos (págs. 116 a 119 del PDF; págs. 5 a 8 del Tema 5)."},{"id":"q23","sourceRow":24,"theme":"Tema 5. Muestreo en marketing e investigación de mercados","question":"¿En la recogida y tratamiento de los datos se puede utilizar una escala de Likert que permite identificar el grado de calidad de la experiencia del encuestado ante una situación comercial determinada?","type":"single","options":[{"id":"o1","text":"Sí.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"No.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Sí, aunque solo es una parte del objetivo de esta escala.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"No, aunque siempre puede haber excepciones.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 5.4 se define la escala de Likert como una escala que identifica el nivel de acuerdo o desacuerdo para medir reacciones, actitudes y comportamientos ante una situación específica; evaluar el grado de calidad de una experiencia comercial es una aplicación parcial dentro de dicho objetivo (págs. 126 y 127 del PDF; págs. 15 y 16 del Tema 5)."},{"id":"q24","sourceRow":25,"theme":"Tema 5. Muestreo en marketing e investigación de mercados","question":"¿Cuál de estas ventajas no se obtienen del uso de una escala de Likert en una encuesta?","type":"single","options":[{"id":"o1","text":"Generación de mediciones de calidad de los fenómenos que se quieren analizar.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Es sencilla de utilizar, pero genera confusión a los encuestados.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Su sistema de graduación favorece a que los encuestados se puedan decantar por las respuestas que más se ajustan a sus opiniones.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Los resultados son cuantificables.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 5.4 se indica como ventaja que es muy sencilla de contestar, mientras que la dificultad para identificar las respuestas positivas o negativas figura como desventaja, por lo que generar confusión no es una ventaja (págs. 127 y 128 del PDF; págs. 16 y 17 del Tema 5)."},{"id":"q25","sourceRow":26,"theme":"Tema 5. Muestreo en marketing e investigación de mercados","question":"¿Qué tipo de muestreo se caracteriza por identificar grupos con suficiente potencial para ser utilizados como una muestra fiable de estudio y se extraer determinadas unidades muestrales?","type":"single","options":[{"id":"o1","text":"Conveniencia.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Bola de nieve.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Por cuotas.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Casos críticos.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 5.2 se define literalmente el muestreo de bola de nieve como aquel que identifica grupos con suficiente potencial para ser utilizados como muestra fiable de estudio y extrae determinadas unidades muestrales (pág. 119 del PDF; pág. 8 del Tema 5)."},{"id":"q26","sourceRow":27,"theme":"Tema 6. Análisis clásico y multivariante de la información en investigación de mercados","question":"¿Cuál de estos análisis no se puede identificar en los análisis bivariados?","type":"single","options":[{"id":"o1","text":"Tendencia central variable.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Análisis datos cuantitativos.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Comparación métodos analíticos.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Técnicas diagnóstico.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 6.2 (Figura 1 y texto) se ubica el análisis de las medidas de tendencia central de la variable dentro del análisis univariante, mientras que las demás opciones son categorías del análisis bivariado (págs. 146 a 148 del PDF; págs. 5 a 7 del Tema 6)."},{"id":"q27","sourceRow":28,"theme":"Tema 6. Análisis clásico y multivariante de la información en investigación de mercados","question":"¿Cuál de estos análisis no se puede identificar entre los análisis de datos comparando muestras independientes?","type":"single","options":[{"id":"o1","text":"T-Student.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Índice Kappa.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Test Wilcoxon.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Test Kruskal-Wallis.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 6.2 (Figura 1 y texto), el índice Kappa se clasifica dentro de la comparación de métodos analíticos, no en la comparación de grupos de muestras independientes (págs. 146, 149 y 150 del PDF; págs. 5, 8 y 9 del Tema 6)."},{"id":"q28","sourceRow":29,"theme":"Tema 6. Análisis clásico y multivariante de la información en investigación de mercados","question":"¿Cuál de estas técnicas no se puede identificar entre los métodos multivariante de naturaleza dependiente?","type":"single","options":[{"id":"o1","text":"Correlación canónica.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"MANOVA.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Análisis factorial.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Análisis discriminante.","correct":false,"sourceLabel":"D"}],"explanation":"En los apartados 6.3 y 6.4 se establece que el análisis factorial es un método multivariante de interdependencia, mientras que correlación canónica, MANOVA y análisis discriminante son métodos de dependencia (págs. 155, 156, 162 y 163 del PDF; págs. 14, 15, 21 y 22 del Tema 6)."},{"id":"q29","sourceRow":30,"theme":"Tema 6. Análisis clásico y multivariante de la información en investigación de mercados","question":"¿Cuál de estas técnicas no se puede identificar entre los métodos multivariante de naturaleza independiente?","type":"multiple","options":[{"id":"o1","text":"ANOVA.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Análisis correspondencias.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"MANOVA.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Análisis de conglomerados.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 6.4 (Figura 6) se identifican como métodos multivariantes de interdependencia (naturaleza independiente) el análisis de correspondencias y el análisis de conglomerados; por el contrario, ANOVA es un análisis bivariado (pág. 149 del PDF; pág. 8 del Tema 6) y MANOVA es un método multivariante de dependencia (pág. 155 del PDF; pág. 14 del Tema 6)."},{"id":"q30","sourceRow":31,"theme":"Tema 6. Análisis clásico y multivariante de la información en investigación de mercados","question":"¿Qué método de análisis multivariante de naturaleza independiente permite estimar el efecto y las relaciones entre múltiples variables objeto de estudio?","type":"single","options":[{"id":"o1","text":"Análisis discriminante.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Ecuaciones estructurales.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"MANOVA.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Ninguno de los anteriores métodos es de naturaleza independiente.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 6.3 se especifica que las ecuaciones estructurales, el análisis discriminante y MANOVA son todos métodos multivariantes de dependencia, no de interdependencia o naturaleza independiente (págs. 155 y 156 del PDF; págs. 14 y 15 del Tema 6)."},{"id":"q31","sourceRow":32,"theme":"Tema 8. Nuevos ámbitos de la investigación de mercados","question":"¿Cuál de estas características no se identifica en la inteligencia de negocios?","type":"single","options":[{"id":"o1","text":"Datos en tiempo real.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Visualización de datos.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Generación de informes.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Información táctica.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 8.2 se enumeran las características de la inteligencia de negocios (compatibilidad del proceso, datos en tiempo real, generación de informes, visualización de datos e información estratégica), por lo que la información táctica no corresponde (pág. 178 del PDF; pág. 5 del Tema 8)."},{"id":"q32","sourceRow":33,"theme":"Tema 8. Nuevos ámbitos de la investigación de mercados","question":"El big data es muy útil porque proporciona a la empresa una gran cantidad de datos que no requieren del uso de técnicas especiales para poder procesar y manejar toda esa información.","type":"single","options":[{"id":"o1","text":"Verdadero.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Falso.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Falso, aunque en ocasiones no requieres de técnicas especiales para analizar los datos.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Verdadero, aunque siempre puede haber una excepción.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 8.3 se indica textualmente que el big data proporciona una gran cantidad de datos que sí requieren del uso de técnicas especiales para poder procesar y manejar toda esa información (pág. 180 del PDF; pág. 7 del Tema 8)."},{"id":"q33","sourceRow":34,"theme":"Tema 8. Nuevos ámbitos de la investigación de mercados","question":"Las técnicas de neuromarketing pueden ser desarrolladas por cualquier profesional de marketing de la empresa.","type":"single","options":[{"id":"o1","text":"Verdadero.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Falso.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Falso, aunque en ocasiones sí las puede desarrollar cualquier empleado.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Verdadero, aunque siempre puede haber una excepción.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 8.4 se establece que las técnicas de neuromarketing deben ser desarrolladas por especialistas con conocimientos sobre el cerebro humano capaces de leer e interpretar datos fisiológicos (págs. 183 y 184 del PDF; págs. 10 y 11 del Tema 8)."},{"id":"q34","sourceRow":35,"theme":"Tema 8. Nuevos ámbitos de la investigación de mercados","question":"La netnografía permitirá a la empresa identificar a los internautas como meros receptores de información.","type":"single","options":[{"id":"o1","text":"Verdadero.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Falso.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Falso, aunque en ocasiones sí son únicamente receptores de información.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Verdadero, aunque siempre puede haber una excepción y que sean creadores de información.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 8.5 se señala expresamente que en las comunidades online no se puede identificar a los internautas como meros receptores de información, sino también como creadores de información (pág. 187 del PDF; pág. 14 del Tema 8)."},{"id":"q35","sourceRow":36,"theme":"Tema 8. Nuevos ámbitos de la investigación de mercados","question":"En investigaciones comerciales en el mobile market research la recogida de información es pasiva a través de los dispositivos móviles.","type":"single","options":[{"id":"o1","text":"Verdadero.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Falso.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Falso, aunque en ocasiones sí es un proceso pasivo.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Verdadero, aunque en ocasiones es un proceso activo.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 8.6 se explica que el mobile market research combina la recogida activa de información (encuestas online, cualitativas, personales o telefónicas respondidas en el móvil) con la recogida pasiva mediante aplicaciones que captan datos del entorno (pág. 190 del PDF; pág. 17 del Tema 8)."},{"id":"q36","sourceRow":37,"theme":"Tema 9. Elaboración y presentación de los estudios de mercado","question":"¿Cuál de estas pautas no debe ser tenida en cuenta en el desarrollo del informe final de una investigación de mercados?","type":"single","options":[{"id":"o1","text":"Asegurar la confidencialidad de los datos obtenidos.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Evitar invadir la privacidad de las personas y/o entidades que participan, de algún modo, en la investigación.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"No hace falta asegurar que las personas y/o entidades que participan en la investigación han otorgado el consentimiento adecuado para el tratamiento de los datos obtenidos.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Evitar invadir la privacidad de las personas y/o entidades que participan, de algún modo, en la investigación.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 9.2 se indica como pauta obligatoria asegurar que las personas o entidades participantes hayan otorgado el consentimiento adecuado para el tratamiento de los datos obtenidos (pág. 204 del PDF; pág. 5 del Tema 9)."},{"id":"q37","sourceRow":38,"theme":"Tema 9. Elaboración y presentación de los estudios de mercado","question":"¿Cuáles de estos elementos se deben incluir en el informe de una investigación comercial?","type":"multiple","options":[{"id":"o1","text":"Informe.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Referencias.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Apéndices.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Tablas de contenidos.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 9.2 (Figura 1 y texto) se detalla que la estructura base de un informe de investigación comercial incluye portada, tabla de contenidos, informe, referencias y apéndices (págs. 205 a 208 del PDF; págs. 6 a 9 del Tema 9)."},{"id":"q38","sourceRow":39,"theme":"Tema 9. Elaboración y presentación de los estudios de mercado","question":"¿Qué tipo de informe suele el resultado de encargos de investigación realizados por organizaciones públicas y/o privadas?","type":"single","options":[{"id":"o1","text":"Informe científico.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Informe técnico.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Informe mixto.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Informe de divulgación.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 9.3 se define literalmente que los informes técnicos suelen ser el resultado de encargos de investigación realizados por organizaciones públicas y/o privadas (pág. 210 del PDF; pág. 11 del Tema 9)."},{"id":"q39","sourceRow":40,"theme":"Tema 9. Elaboración y presentación de los estudios de mercado","question":"¿Qué gráfico permite identificar de forma efectiva las tendencias durante un determinado período de tiempo?","type":"single","options":[{"id":"o1","text":"Gráfico de pastel.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Gráfico de barras agrupadas.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Gráfico de línea.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Gráfico de barras.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 9.5 se señala textualmente que el gráfico de línea permite identificar de manera efectiva las tendencias durante un determinado período de tiempo (págs. 214 y 215 del PDF; págs. 15 y 16 del Tema 9)."},{"id":"q40","sourceRow":41,"theme":"Tema 9. Elaboración y presentación de los estudios de mercado","question":"¿Cuál de estas pautas de redacción no se debe tener en cuenta en la elaboración del informe de una investigación de mercados?","type":"single","options":[{"id":"o1","text":"Redacción en tiempo pasado.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"Contenido conciso.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Redacción breve, usando palabras y frases cortas.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Argumentación basada en hechos y no en emociones.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 9.4 se establece como pauta de estilo la redacción en tiempo presente, por lo que redactar en tiempo pasado no corresponde (pág. 213 del PDF; pág. 14 del Tema 9)."},{"id":"q41","sourceRow":42,"theme":"Tema 10. La auditoría en marketing e investigación de mercados","question":"¿Cuál de estos factores no provoca la necesidad de llevar a cabo una auditoría de marketing?","type":"single","options":[{"id":"o1","text":"Crecimiento menor de la media del mercado.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Entrada de nuevos competidores.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Identificación de cambios en los hábitos de consumo.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Aumento de las ventas.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 10.2 se indica que la auditoría de marketing se motiva por el descenso de ventas (no por su aumento), además de la entrada de nuevos competidores, cambios en los hábitos de consumo y crecimiento inferior a la media del mercado (pág. 230 del PDF; pág. 5 del Tema 10)."},{"id":"q42","sourceRow":43,"theme":"Tema 10. La auditoría en marketing e investigación de mercados","question":"¿Cuáles de estas etapas se deben llevar a cabo para realizar una auditoría de marketing?","type":"single","options":[{"id":"o1","text":"Plan de acción.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Seguimiento.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Toma de datos.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Todas son etapas del proceso de realización de una auditoría de marketing.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 10.3 (Figura 1 y texto) se describen las seis etapas de la auditoría de marketing, entre las que se incluyen la toma de datos (Etapa 1), el plan de acción (Etapa 5) y el seguimiento (Etapa 6) (págs. 235 a 237 del PDF; págs. 10 a 12 del Tema 10)."},{"id":"q43","sourceRow":44,"theme":"Tema 10. La auditoría en marketing e investigación de mercados","question":"¿Qué métrica permite calcular el dinero que la empresa invierte en captar un nuevo cliente?","type":"single","options":[{"id":"o1","text":"CAC.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"LTV.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"MRR.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"NPS.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 10.4 se define el Coste de adquisición del cliente (CAC) como la métrica que calcula el dinero que la empresa invierte en captar un nuevo cliente (pág. 239 del PDF; pág. 14 del Tema 10)."},{"id":"q44","sourceRow":45,"theme":"Tema 10. La auditoría en marketing e investigación de mercados","question":"¿Qué métrica permite identificar la relación existente entre el número de usuarios que visitaron una página web y el número de usuarios que realizaron una conversión?","type":"single","options":[{"id":"o1","text":"Porcentaje de clientes influenciados por marketing.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Coste por lead.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Porcentaje de clientes originados en marketing.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Tasa de conversión.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 10.4 se define literalmente la tasa de conversión como la relación existente entre el número de usuarios que visitaron una página web y el número de usuarios que realizaron una conversión (pág. 241 del PDF; pág. 16 del Tema 10)."},{"id":"q45","sourceRow":46,"theme":"Tema 10. La auditoría en marketing e investigación de mercados","question":"¿Qué elemento que es un eje central en el desarrollo de una auditoría de marketing insta a analizar la estructura formal de la empresa?","type":"single","options":[{"id":"o1","text":"Objetivos.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Programa.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Ejecución.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Organización.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 10.2 se señala textualmente que el elemento Organización de la auditoría de marketing analiza la estructura formal de la empresa, las líneas de autoridad y responsabilidad y la adecuación del personal (pág. 233 del PDF; pág. 8 del Tema 10)."},{"id":"q46","sourceRow":47,"theme":"Tema 11. Implicaciones éticas y legales de la investigación de mercados","question":"¿Cuál de estos principios no se identifica en un empresa responsable y sostenible?","type":"single","options":[{"id":"o1","text":"Bien común.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Jerarquía.","correct":true,"sourceLabel":"B"},{"id":"o3","text":"Emocional.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Confianza.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 11.2 (Figura 1 y texto) se detallan los principios de una empresa responsable y sostenible según Olcese et al. (2008), donde figura la holarquía (descentralización), no la jerarquía, junto con el bien común, lo emocional y la confianza (págs. 256 a 258 del PDF; págs. 7 a 9 del Tema 11)."},{"id":"q47","sourceRow":48,"theme":"Tema 11. Implicaciones éticas y legales de la investigación de mercados","question":"Las empresas pueden tener un comportamiento ético, aunque en ocasiones diseñen acciones comerciales de dudoso gusto, con intenciones únicamente mercantilistas.","type":"single","options":[{"id":"o1","text":"Sí.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"No, aunque siempre puede haber excepciones.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"No.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Sí, aunque la empresa debería justificarse.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 11.3 se afirma expresamente que las empresas no deben diseñar estrategias, acciones y actividades comerciales con un único fin mercantilista, sino siendo conscientes de su impacto para evitar prácticas de dudoso gusto (pág. 260 del PDF; pág. 11 del Tema 11)."},{"id":"q48","sourceRow":49,"theme":"Tema 11. Implicaciones éticas y legales de la investigación de mercados","question":"¿Una empresa puede definir su misión y visión sin tener en cuenta su código ético?","type":"single","options":[{"id":"o1","text":"Sí.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"No, aunque alguna vez ha ocurrido.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"No.","correct":true,"sourceLabel":"C"},{"id":"o4","text":"Sí, aunque la empresa debería justificarse.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 11.2 se indica literalmente que el código ético de cada empresa está íntimamente ligado a la misión y visión de la compañía, por lo que no pueden definirse al margen de este (pág. 255 del PDF; pág. 6 del Tema 11)."},{"id":"q49","sourceRow":50,"theme":"Tema 11. Implicaciones éticas y legales de la investigación de mercados","question":"¿Cuál de estos estándares de comportamiento no debe cumplir una empresa actualmente?","type":"single","options":[{"id":"o1","text":"Explotar la debilidad de un sistema informático para beneficio o satisfacción personal.","correct":true,"sourceLabel":"A"},{"id":"o2","text":"No distorsionar ni retener la información que esté relacionada con un problema o situación de interés público.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Apoyar, respetar y acatar la ley.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Usar las habilidades y conocimientos para informar al público.","correct":false,"sourceLabel":"D"}],"explanation":"En el apartado 11.4 se establece dentro de los estándares de conducta la prohibición explícita de explotar la debilidad de un sistema informático para beneficio o satisfacción personal (pág. 265 del PDF; pág. 16 del Tema 11)."},{"id":"q50","sourceRow":51,"theme":"Tema 11. Implicaciones éticas y legales de la investigación de mercados","question":"La función servicio la debe cumplir el órgano de gobierno y dirección de una empresa y hace referencia a:","type":"single","options":[{"id":"o1","text":"Asegurar la integración de la RSE y la sostenibilidad en el proceso de formulación e interpretación de la estrategia empresarial.","correct":false,"sourceLabel":"A"},{"id":"o2","text":"Promocionar el diálogo con los grupos de interés y la participación activa de la empresa con estos grupos.","correct":false,"sourceLabel":"B"},{"id":"o3","text":"Realizar labores de consideración, revisión, evaluación y supervisión del seguimiento de las políticas empresariales.","correct":false,"sourceLabel":"C"},{"id":"o4","text":"Ser capaces de promover la interiorización de los valores relacionados con la responsabilidad y la sostenibilidad dentro de la empresa.","correct":true,"sourceLabel":"D"}],"explanation":"En el apartado 11.4 se define textualmente la función servicio del órgano de gobierno y dirección como la capacidad de promover la interiorización de los valores relacionados con la responsabilidad y la sostenibilidad dentro de la empresa (pág. 264 del PDF; pág. 15 del Tema 11)."}];
+  const TOPIC_ORDER = [...new Set(BANK.map(q => q.theme))];
+  const CONFLICT_PAIRS = [['q23','q24'], ['q28','q29']];
+  const EXAM_SIZE = 20;
+  let currentExam = [];
+  let lastExamIds = new Set();
+  let answers = Object.create(null);
+  let submitted = false;
+
+  const form = document.getElementById('exam-form');
+  const questionsEl = document.getElementById('questions');
+  const submitBtn = document.getElementById('submit-btn');
+  const submitHelp = document.getElementById('submit-help');
+  const resultSummary = document.getElementById('result-summary');
+
+  function shuffle(items) {
+    const a = items.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function getAnsweredCount() {
+    return currentExam.reduce((count, q) => count + ((answers[q.id] && answers[q.id].length) ? 1 : 0), 0);
+  }
+  function updateProgress() {
+    const count = getAnsweredCount();
+    document.getElementById('answered-count').textContent = `${count}/${EXAM_SIZE}`;
+    document.getElementById('progress-label').textContent = `${count} de ${EXAM_SIZE} respondidas`;
+    document.getElementById('progress-fill').style.width = `${count / EXAM_SIZE * 100}%`;
+    const bar = document.getElementById('progress-bar');
+    bar.setAttribute('aria-valuenow', String(count));
+    submitBtn.disabled = submitted || count !== EXAM_SIZE;
+    submitHelp.textContent = submitted ? 'El examen ya fue enviado.' : (count === EXAM_SIZE ? 'Ya puedes enviar el examen.' : 'Responde las 20 preguntas para habilitar el envío.');
+  }
+  function makeSingleSelection(candidates, count, chosenSoFar) {
+    const randomized = shuffle(candidates);
+    for (let attempt = 0; attempt < 250; attempt++) {
+      const sample = shuffle(randomized).slice(0, count);
+      const combined = chosenSoFar.concat(sample);
+      const ids = new Set(combined.map(q => q.id));
+      const hasConflict = CONFLICT_PAIRS.some(pair => ids.has(pair[0]) && ids.has(pair[1]));
+      if (!hasConflict && sample.length === count) return sample;
+    }
+    // Fallback: permit repetition from the previous exam if necessary, but never duplicates or known near-equivalents.
+    for (let attempt = 0; attempt < 400; attempt++) {
+      const sample = shuffle(BANK.filter(q => q.type === 'single' && q.theme === (candidates[0] && candidates[0].theme))).slice(0, count);
+      const ids = new Set(chosenSoFar.concat(sample).map(q => q.id));
+      if (sample.length === count && !CONFLICT_PAIRS.some(pair => ids.has(pair[0]) && ids.has(pair[1]))) return sample;
+    }
+    throw new Error('No hay suficientes preguntas distintas para completar un tema sin equivalencias.');
+  }
+  function buildExam() {
+    const multiPool = BANK.filter(q => q.type === 'multiple');
+    let selectedMulti;
+    if (lastExamIds.size === 0) {
+      selectedMulti = shuffle(multiPool).slice(0, 2);
+    } else {
+      const notInPrevious = shuffle(multiPool.filter(q => !lastExamIds.has(q.id)));
+      const inPrevious = shuffle(multiPool.filter(q => lastExamIds.has(q.id)));
+      selectedMulti = [];
+      if (notInPrevious.length) selectedMulti.push(notInPrevious[0]);
+      selectedMulti.push(...inPrevious.slice(0, 2 - selectedMulti.length));
+      if (selectedMulti.length < 2) {
+        const already = new Set(selectedMulti.map(q => q.id));
+        selectedMulti.push(...shuffle(multiPool.filter(q => !already.has(q.id))).slice(0, 2 - selectedMulti.length));
+      }
+    }
+
+    const chosen = [];
+    for (const theme of TOPIC_ORDER) {
+      const selectedMultiForTheme = selectedMulti.filter(q => q.theme === theme);
+      const requiredSingles = selectedMultiForTheme.length ? 1 : 2;
+      const allSingles = BANK.filter(q => q.theme === theme && q.type === 'single');
+      let freshSingles = allSingles.filter(q => !lastExamIds.has(q.id));
+      let picked;
+      try {
+        picked = makeSingleSelection(freshSingles.length >= requiredSingles ? freshSingles : allSingles, requiredSingles, chosen.concat(selectedMultiForTheme));
+      } catch (err) {
+        picked = makeSingleSelection(allSingles, requiredSingles, chosen.concat(selectedMultiForTheme));
+      }
+      chosen.push(...selectedMultiForTheme, ...picked);
+    }
+    if (chosen.length !== EXAM_SIZE) throw new Error(`El banco produjo ${chosen.length} preguntas en lugar de ${EXAM_SIZE}.`);
+    const uniqueIds = new Set(chosen.map(q => q.id));
+    if (uniqueIds.size !== EXAM_SIZE) throw new Error('Se detectaron preguntas repetidas dentro del mismo examen.');
+    if (CONFLICT_PAIRS.some(pair => uniqueIds.has(pair[0]) && uniqueIds.has(pair[1]))) throw new Error('Se detectaron preguntas prácticamente equivalentes.');
+    return shuffle(chosen).map(q => ({
+      ...q,
+      displayOptions: shuffle(q.options.map(o => ({...o})))
+    }));
+  }
+  function renderExam() {
+    questionsEl.innerHTML = currentExam.map((q, index) => {
+      const multi = q.type === 'multiple';
+      const inputType = multi ? 'checkbox' : 'radio';
+      const instruction = multi ? 'Selección múltiple: marca todas las opciones correctas.' : 'Opción única: selecciona una sola respuesta.';
+      const options = q.displayOptions.map((opt, optionIndex) => {
+        const letter = String.fromCharCode(65 + optionIndex);
+        const inputId = `${q.id}_${opt.id}`;
+        return `<label class="option" for="${inputId}">
+          <input id="${inputId}" type="${inputType}" name="answer_${q.id}" value="${escapeHTML(opt.id)}" data-qid="${q.id}" ${submitted ? 'disabled' : ''}>
+          <span class="option-content"><span class="letter">${letter}</span><span class="option-text">${escapeHTML(opt.text)}</span></span>
+          <span class="answer-mark" hidden></span>
+        </label>`;
+      }).join('');
+      return `<article class="question-card" id="card_${q.id}" data-question="${q.id}">
+        <div class="question-meta">
+          <span class="question-number">Pregunta ${index + 1} de ${EXAM_SIZE}</span>
+          <span class="tag">${escapeHTML(q.theme)}</span>
+          <span class="tag ${multi ? 'type-multiple' : ''}">${multi ? 'Selección múltiple' : 'Opción única'}</span>
+        </div>
+        <h3>${escapeHTML(q.question)}</h3>
+        <p class="instruction">${instruction}</p>
+        <div class="options">${options}</div>
+        <div class="feedback" id="feedback_${q.id}" hidden></div>
+      </article>`;
+    }).join('');
+  }
+  function syncSelectedStyles(qid) {
+    const group = questionsEl.querySelectorAll(`[data-qid="${qid}"]`);
+    group.forEach(input => input.closest('.option').classList.toggle('is-selected', input.checked));
+  }
+  form.addEventListener('change', event => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.dataset.qid || submitted) return;
+    const qid = input.dataset.qid;
+    const selected = [...form.querySelectorAll(`input[name="answer_${qid}"]:checked`)].map(el => el.value);
+    answers[qid] = selected;
+    syncSelectedStyles(qid);
+    updateProgress();
+  });
+  function formatChoiceList(q, ids) {
+    const selected = new Set(ids || []);
+    return q.displayOptions.map((option, index) => ({option, index})).filter(x => selected.has(x.option.id)).map(x => `${String.fromCharCode(65 + x.index)}. ${x.option.text}`).join(' | ') || 'Sin respuesta';
+  }
+  function gradeExam() {
+    let correctCount = 0;
+    const resultDetails = currentExam.map(q => {
+      const selected = new Set(answers[q.id] || []);
+      const correct = new Set(q.displayOptions.filter(o => o.correct).map(o => o.id));
+      const isCorrect = selected.size === correct.size && [...correct].every(id => selected.has(id));
+      if (isCorrect) correctCount++;
+      return {q, selected, correct, isCorrect};
+    });
+    const incorrectCount = EXAM_SIZE - correctCount;
+    resultSummary.hidden = false;
+    resultSummary.innerHTML = `<h2 class="result-heading">Resultado del examen</h2>
+      <div class="score-grid">
+        <div class="score-cell"><span>Calificación final</span><strong>${correctCount}/20</strong></div>
+        <div class="score-cell"><span>Respuestas correctas</span><strong>${correctCount}</strong></div>
+        <div class="score-cell"><span>Respuestas incorrectas</span><strong>${incorrectCount}</strong></div>
+      </div>`;
+
+    resultDetails.forEach(({q, selected, correct, isCorrect}) => {
+      const card = document.getElementById(`card_${q.id}`);
+      const feedback = document.getElementById(`feedback_${q.id}`);
+      card.classList.add(isCorrect ? 'is-correct' : 'is-incorrect');
+      q.displayOptions.forEach((option, index) => {
+        const input = card.querySelector(`input[value="${option.id}"]`);
+        const label = input.closest('.option');
+        const mark = label.querySelector('.answer-mark');
+        input.disabled = true;
+        label.classList.remove('is-selected');
+        if (option.correct) {
+          label.classList.add('is-right');
+          mark.hidden = false;
+          mark.textContent = '✓ Correcta';
+        } else if (selected.has(option.id)) {
+          label.classList.add('is-wrong-selected');
+          mark.hidden = false;
+          mark.textContent = '✕ Marcada';
+          mark.classList.add('wrong');
+        }
+      });
+      const selectedText = formatChoiceList(q, [...selected]);
+      const correctText = formatChoiceList(q, [...correct]);
+      feedback.hidden = false;
+      feedback.innerHTML = `<p class="feedback-status ${isCorrect ? 'good' : 'bad'}">${isCorrect ? '✓ Respuesta correcta · 1 punto' : '✕ Respuesta incorrecta · 0 puntos'}</p>
+        <p><strong>Respuesta seleccionada:</strong> ${escapeHTML(selectedText)}</p>
+        <p><strong>Respuesta correcta:</strong> ${escapeHTML(correctText)}</p>
+        <p><strong>Explicación del CSV:</strong> ${escapeHTML(q.explanation)}</p>
+        <p class="reference"><strong>Referencia:</strong> fila ${q.sourceRow} del CSV (registro ${q.sourceRow - 1}).</p>`;
+    });
+    submitted = true;
+    document.getElementById('exam-status').textContent = 'Examen enviado';
+    submitBtn.textContent = 'Examen enviado';
+    updateProgress();
+    resultSummary.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    if (submitted) return;
+    if (getAnsweredCount() !== EXAM_SIZE) {
+      alert('Debes responder las 20 preguntas antes de enviar el examen.');
+      return;
+    }
+    gradeExam();
+  });
+  function generateNewExam(initial = false) {
+    if (!initial && !submitted) {
+      const answered = getAnsweredCount();
+      const message = `El intento actual tiene ${answered} de 20 preguntas respondidas y aún no ha sido enviado. ¿Deseas descartarlo y generar un nuevo examen?`;
+      if (!window.confirm(message)) return;
+    }
+    const oldIds = new Set(currentExam.map(q => q.id));
+    lastExamIds = oldIds;
+    try {
+      currentExam = buildExam();
+    } catch (error) {
+      alert(`No se pudo generar el examen: ${error.message}`);
+      return;
+    }
+    if (currentExam.filter(q => q.type === 'multiple').length !== 2) {
+      alert('El banco no permite mantener la combinación de tipos de pregunta prevista.');
+      return;
+    }
+    answers = Object.create(null);
+    submitted = false;
+    renderExam();
+    resultSummary.hidden = true;
+    resultSummary.innerHTML = '';
+    document.getElementById('exam-status').textContent = 'Intento en curso';
+    submitBtn.textContent = 'Enviar examen';
+    updateProgress();
+    if (!initial) window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+  document.getElementById('new-exam-btn').addEventListener('click', () => generateNewExam(false));
+
+  // Inicia automáticamente el primer intento sin mostrar las claves.
+  generateNewExam(true);
+  </script>
+</body>
+</html>
